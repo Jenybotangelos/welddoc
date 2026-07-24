@@ -39,6 +39,7 @@ jobs:
           name: python-app
           path: |
             weldoc-backend/
+            weldoc/
             !weldoc-backend/venv/
             !antenv/
 

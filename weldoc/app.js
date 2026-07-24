@@ -12,7 +12,7 @@ const ROLE_KEY = 'weldoc_role';        // 'office' | 'vendor'
 const CURRENT_USER_KEY = 'weldoc_user'; // logged-in person id (for the vendor role)
 
 /* ---- API helpers ---- */
-const API_BASE = 'https://welddoc-dnc6bqa2dahcgtek.canadacentral-01.azurewebsites.net/api';
+const API_BASE = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' ? 'http://127.0.0.1:5000/api' : window.location.origin + '/api';
 async function apiGet(path){ const r=await fetch(API_BASE+path); if(!r.ok) throw new Error(r.statusText); return r.json(); }
 async function apiPost(path, data){ const r=await fetch(API_BASE+path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); if(!r.ok) throw new Error(r.statusText); return r.json(); }
 function normalizeProject(p){ p.order=p.orderNo||p.order||''; return p; }
