@@ -1859,9 +1859,12 @@ async function initPipelineDetailPage(){
   PAGE.name='pipeline-detail'; initDB();
   PAGE.pipelineId=Number(qp('id'));
   try {
-    /* Single API call for all pipeline detail data */
-    const d = await apiGet('/pipelines/'+PAGE.pipelineId+'/detail');
-    DB.clients=d.client?[d.client]:[]; DB.projects=normalizeProjects(d.project?[d.project]:[]); DB.pipelines=d.pipelines||[]; DB.materials=normalizeMaterials(d.materials||[]); DB.welds=normalizeWelds(d.welds||[]);
+    /* Fetch this pipeline first, then load only related data */
+    const pl0 = await apiGet('/pipelines/'+PAGE.pipelineId);
+    const projId = pl0.projectId;
+    const [apiPr, apiPl, apiM, apiW] = await Promise.all([apiGet('/projects/'+projId), apiGet('/pipelines?projectId='+projId), apiGet('/materials?pipelineId='+PAGE.pipelineId), apiGet('/welds?pipelineId='+PAGE.pipelineId)]);
+    const apiCl = await apiGet('/clients/'+apiPr.clientId);
+    DB.clients=[apiCl]; DB.projects=normalizeProjects([apiPr]); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
     rebuildRelationships();
   } catch(e){ console.error('API error:', e); }
   const tab=qp('tab'); if(tab==='weldlist'||tab==='materials') detailView=tab; else detailView='materials';
@@ -2071,21 +2074,29 @@ function onMatDrop(e,targetMatId){
     mats.filter(m=>m.position>=newPos&&m.position<oldPos).forEach(m=>m.position++);
   }
   dragged.position=newPos;
-  /* Handle start of plumbing (end stays where it was manually set) */
+  /* Handle start/end of plumbing */
   const sorted=mats.slice().sort((a,b)=>a.position-b.position);
   const idx=sorted.findIndex(m=>m.id===dragged.id);
+  /* Only reassign start/end if the dragged item was previously start/end,
+     or if it displaced an existing start/end item */
   const hadStart=sorted.some(m=>m.startOfPlumbing);
-  /* Clear start from dragged (it will be reassigned if needed) */
-  const draggedHadEnd=dragged.endOfPlumbing;
+  const hadEnd=sorted.some(m=>m.endOfPlumbing);
+  /* Clear start/end from dragged (it will be reassigned if needed) */
   dragged.startOfPlumbing=false;
-  /* Keep end as-is — do not clear or reassign */
+  dragged.endOfPlumbing=false;
   /* If dropped at first position AND there was already a start, take over start */
   if(idx===0 && hadStart){
     mats.forEach(m=>m.startOfPlumbing=false);
     dragged.startOfPlumbing=true;
   }
-  /* Ensure there's always a start (first item) if one existed before */
+  /* If dropped at last position AND there was already an end, take over end */
+  else if(idx===sorted.length-1 && hadEnd){
+    mats.forEach(m=>m.endOfPlumbing=false);
+    dragged.endOfPlumbing=true;
+  }
+  /* Ensure there's always a start (first item) and end (last item) if they existed before */
   if(hadStart && !sorted.some(m=>m.startOfPlumbing)){ sorted[0].startOfPlumbing=true; }
+  if(hadEnd && !sorted.some(m=>m.endOfPlumbing)){ sorted[sorted.length-1].endOfPlumbing=true; }
   /* Find new neighbors */
   const prev=idx>0?sorted[idx-1]:null;
   const next=idx<sorted.length-1?sorted[idx+1]:null;
@@ -2620,8 +2631,11 @@ async function initMaterialDetailPage(){
   try {
     const matData = await apiGet('/materials/'+PAGE.materialId);
     const pid = matData.pipelineId;
-    const d = await apiGet('/pipelines/'+pid+'/detail');
-    DB.clients=d.client?[d.client]:[]; DB.projects=normalizeProjects(d.project?[d.project]:[]); DB.pipelines=d.pipelines||[]; DB.materials=normalizeMaterials(d.materials||[]); DB.welds=normalizeWelds(d.welds||[]);
+    const pl0 = await apiGet('/pipelines/'+pid);
+    const projId = pl0.projectId;
+    const [apiPr, apiPl, apiM, apiW] = await Promise.all([apiGet('/projects/'+projId), apiGet('/pipelines?projectId='+projId), apiGet('/materials?pipelineId='+pid), apiGet('/welds?pipelineId='+pid)]);
+    const apiCl = await apiGet('/clients/'+apiPr.clientId);
+    DB.clients=[apiCl]; DB.projects=normalizeProjects([apiPr]); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
     rebuildRelationships();
   } catch(e){ console.error('API error:', e); }
   PAGE.materialId=Number(qp('id')); const m=getMaterial(PAGE.materialId);
