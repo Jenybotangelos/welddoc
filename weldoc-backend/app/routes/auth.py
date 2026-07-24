@@ -1,78 +1,89 @@
 from flask import Blueprint, redirect, request, session, jsonify, current_app
 import uuid
-
-try:
-    import msal
-except ImportError:
-    msal = None
+import json
+import urllib.request
+import urllib.parse
+import base64
 
 auth_bp = Blueprint("auth", __name__)
 
-AUTHORITY_TEMPLATE = "https://login.microsoftonline.com/{tenant}"
-SCOPES = ["User.Read"]
-
-
-def _build_msal_app():
-    return msal.ConfidentialClientApplication(
-        current_app.config["AZURE_CLIENT_ID"],
-        authority=AUTHORITY_TEMPLATE.format(tenant=current_app.config["AZURE_TENANT_ID"]),
-        client_credential=current_app.config["AZURE_CLIENT_SECRET"],
-    )
-
 
 def _get_redirect_uri():
-    # Azure requires http://localhost (not 127.0.0.1) or https://
     scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
     host = request.host
-    # Replace 127.0.0.1 with localhost for Azure App Registration compatibility
     if "127.0.0.1" in host:
         host = host.replace("127.0.0.1", "localhost")
     return f"{scheme}://{host}/auth/callback"
 
 
+def _decode_id_token(id_token):
+    """Decode JWT payload without verification (Azure already validated it)."""
+    parts = id_token.split(".")
+    if len(parts) < 2:
+        return {}
+    payload = parts[1]
+    # Add padding
+    payload += "=" * (4 - len(payload) % 4)
+    decoded = base64.urlsafe_b64decode(payload)
+    return json.loads(decoded)
+
+
 @auth_bp.route("/login")
 def login():
-    if msal is None:
-        return "msal not installed on server. Run: pip install msal", 500
+    cfg = current_app.config
     session["state"] = str(uuid.uuid4())
-    cca = _build_msal_app()
-    auth_url = cca.get_authorization_request_url(
-        SCOPES,
-        state=session["state"],
-        redirect_uri=_get_redirect_uri(),
-        response_type="code",
-    )
+    params = urllib.parse.urlencode({
+        "client_id": cfg["AZURE_CLIENT_ID"],
+        "response_type": "code",
+        "redirect_uri": _get_redirect_uri(),
+        "scope": "openid profile email User.Read",
+        "state": session["state"],
+        "response_mode": "query",
+    })
+    auth_url = f"https://login.microsoftonline.com/{cfg['AZURE_TENANT_ID']}/oauth2/v2.0/authorize?{params}"
     return redirect(auth_url)
 
 
 @auth_bp.route("/auth/callback", methods=["GET", "POST"])
 def auth_callback():
-    # Microsoft may POST (form_post) or GET depending on response_mode
     params = request.form if request.method == "POST" else request.args
 
     if params.get("state") != session.get("state"):
-        return "State mismatch — possible CSRF. <a href='/'>Try again</a>", 403
+        return "State mismatch. <a href='/'>Try again</a>", 403
 
     if "error" in params:
-        return f"Login error: {params['error_description']}", 400
+        return f"Login error: {params.get('error_description', params['error'])}", 400
 
     code = params.get("code")
     if not code:
         return "No authorization code received.", 400
 
-    cca = _build_msal_app()
-    result = cca.acquire_token_by_authorization_code(
-        code,
-        scopes=SCOPES,
-        redirect_uri=_get_redirect_uri(),
-    )
+    # Exchange code for tokens using urllib (no msal needed)
+    cfg = current_app.config
+    token_url = f"https://login.microsoftonline.com/{cfg['AZURE_TENANT_ID']}/oauth2/v2.0/token"
+    data = urllib.parse.urlencode({
+        "client_id": cfg["AZURE_CLIENT_ID"],
+        "client_secret": cfg["AZURE_CLIENT_SECRET"],
+        "code": code,
+        "redirect_uri": _get_redirect_uri(),
+        "grant_type": "authorization_code",
+        "scope": "openid profile email User.Read",
+    }).encode()
 
-    if "error" in result:
-        return f"Token error: {result.get('error_description')}", 400
+    req = urllib.request.Request(token_url, data=data, method="POST")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
 
-    # Extract user info from ID token claims
-    claims = result.get("id_token_claims", {})
-    email = claims.get("preferred_username", "").lower()
+    try:
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode()
+        return f"Token exchange failed: {error_body}", 400
+
+    # Decode the ID token to get user info
+    id_token = result.get("id_token", "")
+    claims = _decode_id_token(id_token)
+    email = claims.get("preferred_username", claims.get("email", "")).lower()
     name = claims.get("name", "")
 
     # Restrict to @botangelos.com only
@@ -84,13 +95,7 @@ def auth_callback():
             "<a href='/'>Back</a>"
         ), 403
 
-    # Store user in session
-    session["user"] = {
-        "email": email,
-        "name": name,
-        "role": "office",
-    }
-
+    session["user"] = {"email": email, "name": name, "role": "office"}
     return redirect("/home.html")
 
 
@@ -105,7 +110,6 @@ def auth_me():
 @auth_bp.route("/logout")
 def logout():
     session.clear()
-    # Redirect to Microsoft logout then back to our app
     tenant = current_app.config["AZURE_TENANT_ID"]
     scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
     post_logout = f"{scheme}://{request.host}/"
