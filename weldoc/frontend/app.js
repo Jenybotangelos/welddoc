@@ -127,7 +127,7 @@ const PIECE_HAS_THICKNESS = {
 };
 function hasDiameter(piece){ return PIECE_HAS_DIAMETER[(piece||'').toLowerCase()] !== false; }
 function hasThickness(piece){ return PIECE_HAS_THICKNESS[(piece||'').toLowerCase()] !== false; }
-const DIMENSION_OPTIONS = ["DN 10","DN 15","DN 20","DN 25","DN 40","DN 50"];
+const DIMENSION_OPTIONS = ["DN 8","DN 10","DN 15","DN 20","DN 25","DN 32","DN 40","DN 50","DN 65","DN 80","DN 100","DN 125","DN 150","DN 200","DN 250","DN 300","DN 350","DN 400","DN 450","DN 500","DN 550","DN 600","DN 700","DN 800","DN 900"];
 const CERT_OPTIONS = ["EN 10204 3.1","EN 10204 3.2","EN 10204 2.2"];
 const PROC_OPTIONS = ["141","147"];
 
@@ -346,12 +346,13 @@ function buildSelectSimple(selectId, options, value){
   sel.innerHTML = '<option value="">Select…</option>' + options.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
   sel.value=value||'';
 }
-function buildSelectOther(selectId, textId, options, value){
+function buildSelectOther(selectId, textId, options, value, noOther){
   const sel=document.getElementById(selectId), txt=document.getElementById(textId);
   const opts = options.slice();
   const inList = value && opts.includes(value);
-  sel.innerHTML = '<option value="">Select…</option>' + opts.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('') + '<option value="__other__">+ Other (type it)…</option>';
-  if(value && !inList){ sel.value='__other__'; txt.style.display='block'; txt.value=value; }
+  sel.innerHTML = '<option value="">Select…</option>' + opts.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('') + (noOther?'':'<option value="__other__">+ Other (type it)…</option>');
+  if(value && !inList && !noOther){ sel.value='__other__'; txt.style.display='block'; txt.value=value; }
+  else if(value && !inList && noOther){ sel.value=''; }
   else { sel.value=value||''; txt.style.display='none'; txt.value=''; }
 }
 function toggleSelectOther(selectId, textId){ const sel=document.getElementById(selectId), txt=document.getElementById(textId); if(sel.value==='__other__'){ txt.style.display='block'; txt.focus(); } else { txt.style.display='none'; } }
@@ -1169,7 +1170,7 @@ function toggleDnFields(piece){
     div.id=`dn${i}-field`;
     div.innerHTML=`<span class="lbl">DN ${i}</span><select id="input-mat-dimension${i}" onchange="toggleSelectOther('input-mat-dimension${i}','input-mat-dimension${i}-new')"></select><input type="text" id="input-mat-dimension${i}-new" class="select-other-text" style="display:none" placeholder="Type DN ${i}…">`;
     container.appendChild(div);
-    buildSelectOther(`input-mat-dimension${i}`,`input-mat-dimension${i}-new`,DIMENSION_OPTIONS,'');
+    buildSelectOther(`input-mat-dimension${i}`,`input-mat-dimension${i}-new`,DIMENSION_OPTIONS,'',true);
   }
 }
 function toggleDiameterThicknessFields(piece){
@@ -1210,19 +1211,15 @@ function cascadeFromDesc(){
   const dns=[...new Set(items.map(i=>i.dimension).filter(Boolean))];
   const diens=[...new Set(items.map(i=>i.dien).filter(Boolean))];
   const codes=[...new Set(items.map(i=>i.code).filter(Boolean))];
-  /* DN options: use catalog-filtered values if available, otherwise all DIMENSION_OPTIONS.
-     Also include all DNs from the previous material so they're selectable. */
-  let dnOpts=dns.length?dns:DIMENSION_OPTIONS;
-  if(_prefillAllDns.length && editingMaterialId===null) dnOpts=[...new Set([...dnOpts,..._prefillAllDns])];
   /* Prefill (last DN of previous material) always takes priority */
   const dnDefault=(_prefillDn&&editingMaterialId===null)?_prefillDn:(dns.length===1?dns[0]:'');
-  buildSelectOther('input-mat-dimension','input-mat-dimension-new',dnOpts,dnDefault);
+  buildSelectOther('input-mat-dimension','input-mat-dimension-new',DIMENSION_OPTIONS,dnDefault,true);
   /* populate extra DN fields with DIMENSION_OPTIONS (user picks) */
   const piece=readSelectOther('input-mat-piece','input-mat-piece-new');
   const dnCount=requiredDns(piece);
   for(let i=2;i<=dnCount;i++){
     const sel=document.getElementById(`input-mat-dimension${i}`);
-    if(sel) buildSelectOther(`input-mat-dimension${i}`,`input-mat-dimension${i}-new`,DIMENSION_OPTIONS,'');
+    if(sel) buildSelectOther(`input-mat-dimension${i}`,`input-mat-dimension${i}-new`,DIMENSION_OPTIONS,'',true);
   }
   buildSelectOther('input-mat-dien','input-mat-dien-new',diens,diens.length===1?diens[0]:'');
   /* For material code: always include prefill in options so it can be selected */
@@ -1307,7 +1304,7 @@ function openMaterialModal(id=null, returnToWeld=false){
   const allThicknesses=[...new Set(src.map(i=>i.thickness).filter(Boolean))];
   buildSelectSimple('input-mat-piece',allPieces,'');
   buildSelectOther('input-mat-desc','input-mat-desc-new',allDescs,'');
-  buildSelectOther('input-mat-dimension','input-mat-dimension-new',allDns.length?allDns:DIMENSION_OPTIONS,'');
+  buildSelectOther('input-mat-dimension','input-mat-dimension-new',DIMENSION_OPTIONS,'',true);
   buildSelectOther('input-mat-dien','input-mat-dien-new',allDiens,'');
   buildSelectOther('input-mat-code','input-mat-code-new',allCodes,'');
   buildSelectOther('input-mat-diameter','input-mat-diameter-new',allDiameters,'');
@@ -1326,13 +1323,13 @@ function openMaterialModal(id=null, returnToWeld=false){
     toggleDnFields(m.piece);
     toggleDiameterThicknessFields(m.piece);
     buildSelectOther('input-mat-desc','input-mat-desc-new',allDescs,m.itemDescription);
-    buildSelectOther('input-mat-dimension','input-mat-dimension-new',allDns.length?allDns:DIMENSION_OPTIONS,m.dimension);
+    buildSelectOther('input-mat-dimension','input-mat-dimension-new',DIMENSION_OPTIONS,m.dimension,true);
     /* populate extra DN fields with saved values */
     const dnCount=requiredDns(m.piece);
     for(let i=2;i<=dnCount;i++){
       const savedVal=m[`dimension${i}`]||'';
       const sel=document.getElementById(`input-mat-dimension${i}`);
-      if(sel) buildSelectOther(`input-mat-dimension${i}`,`input-mat-dimension${i}-new`,DIMENSION_OPTIONS,savedVal);
+      if(sel) buildSelectOther(`input-mat-dimension${i}`,`input-mat-dimension${i}-new`,DIMENSION_OPTIONS,savedVal,true);
     }
     buildSelectOther('input-mat-dien','input-mat-dien-new',allDiens,m.dienNo||'');
     buildSelectOther('input-mat-code','input-mat-code-new',allCodes,m.materialCode);
@@ -1357,8 +1354,7 @@ function openMaterialModal(id=null, returnToWeld=false){
     _prefillDn=_prefillAllDns.length?_prefillAllDns[_prefillAllDns.length-1]:'';
     _prefillCode=lastWithDn?lastWithDn.materialCode:(lastMat?lastMat.materialCode:'');
     if(_prefillDn){
-      const dnInitOpts=[...new Set([...allDns,..._prefillAllDns])];
-      buildSelectOther('input-mat-dimension','input-mat-dimension-new',dnInitOpts,_prefillDn);
+      buildSelectOther('input-mat-dimension','input-mat-dimension-new',DIMENSION_OPTIONS,_prefillDn,true);
     }
     if(_prefillCode){
       const codeOpts=allCodes.includes(_prefillCode)?allCodes:[...allCodes,_prefillCode];
@@ -1860,7 +1856,7 @@ async function initPipelineDetailPage(){
   PAGE.name='pipeline-detail'; initDB();
   PAGE.pipelineId=Number(qp('id'));
   try {
-    const [apiC, apiP, apiPl, apiM, apiW] = await Promise.all([apiGet('/clients'), apiGet('/projects'), apiGet('/pipelines'), apiGet('/materials'), apiGet('/welds')]);
+    const [apiC, apiP, apiPl, apiM, apiW] = await Promise.all([apiGet('/clients'), apiGet('/projects'), apiGet('/pipelines'), apiGet('/materials?pipelineId='+PAGE.pipelineId), apiGet('/welds?pipelineId='+PAGE.pipelineId)]);
     DB.clients=apiC; DB.projects=normalizeProjects(apiP); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
     rebuildRelationships();
   } catch(e){ console.error('API error:', e); }
@@ -2614,8 +2610,11 @@ function showSeamDetail(weldId){
 /* ================================================================ MATERIAL DETAIL PAGE ================================================================ */
 async function initMaterialDetailPage(){
   PAGE.name='material-detail'; initDB();
+  PAGE.materialId=Number(qp('id'));
   try {
-    const [apiC, apiP, apiPl, apiM, apiW] = await Promise.all([apiGet('/clients'), apiGet('/projects'), apiGet('/pipelines'), apiGet('/materials'), apiGet('/welds')]);
+    const matData = await apiGet('/materials/'+PAGE.materialId);
+    const pid = matData.pipelineId;
+    const [apiC, apiP, apiPl, apiM, apiW] = await Promise.all([apiGet('/clients'), apiGet('/projects'), apiGet('/pipelines'), apiGet('/materials?pipelineId='+pid), apiGet('/welds?pipelineId='+pid)]);
     DB.clients=apiC; DB.projects=normalizeProjects(apiP); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
     rebuildRelationships();
   } catch(e){ console.error('API error:', e); }
@@ -3145,7 +3144,7 @@ function openMaterialsPageEdit(id){
   /* populate dropdowns */
   document.getElementById('mp-piece').innerHTML=allPieces.map(p=>`<option value="${escapeHtml(p)}" ${p===m.piece?'selected':''}>${escapeHtml(p)}</option>`).join('');
   buildSelectOther('mp-desc','mp-desc-new',allDescs,m.itemDescription);
-  buildSelectOther('mp-dimension','mp-dimension-new',allDns.length?allDns:DIMENSION_OPTIONS,m.dimension);
+  buildSelectOther('mp-dimension','mp-dimension-new',DIMENSION_OPTIONS,m.dimension,true);
   buildSelectOther('mp-dien','mp-dien-new',allDiens,m.dienNo||'');
   buildSelectOther('mp-code','mp-code-new',allCodes,m.materialCode);
   buildSelectOther('mp-diameter','mp-diameter-new',allDiameters,m.diameter||'');
@@ -3165,7 +3164,7 @@ function openMaterialsPageEdit(id){
     div.className='field dn-extra-field';
     div.innerHTML=`<span class="lbl">DN ${i}</span><select id="mp-dimension${i}" onchange="toggleSelectOther('mp-dimension${i}','mp-dimension${i}-new')"></select><input type="text" id="mp-dimension${i}-new" class="select-other-text" style="display:none" placeholder="Type DN ${i}…">`;
     container.appendChild(div);
-    buildSelectOther(`mp-dimension${i}`,`mp-dimension${i}-new`,DIMENSION_OPTIONS,m[`dimension${i}`]||'');
+    buildSelectOther(`mp-dimension${i}`,`mp-dimension${i}-new`,DIMENSION_OPTIONS,m[`dimension${i}`]||'',true);
   }
   openModal('modal-mat-props');
 }
@@ -3183,7 +3182,7 @@ function onMpCategoryChange(){
     div.className='field dn-extra-field';
     div.innerHTML=`<span class="lbl">DN ${i}</span><select id="mp-dimension${i}" onchange="toggleSelectOther('mp-dimension${i}','mp-dimension${i}-new')"></select><input type="text" id="mp-dimension${i}-new" class="select-other-text" style="display:none" placeholder="Type DN ${i}…">`;
     container.appendChild(div);
-    buildSelectOther(`mp-dimension${i}`,`mp-dimension${i}-new`,DIMENSION_OPTIONS,'');
+    buildSelectOther(`mp-dimension${i}`,`mp-dimension${i}-new`,DIMENSION_OPTIONS,'',true);
   }
 }
 function onMpDescChange(){ toggleSelectOther('mp-desc','mp-desc-new'); }
