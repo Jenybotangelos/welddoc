@@ -6,7 +6,7 @@ import os
 
 
 def create_app():
-    frontend_folder = os.path.join(os.path.dirname(__file__), '..', '..', 'weldoc')
+    frontend_folder = os.path.join(os.path.dirname(__file__), '..', 'weldoc')
     app = Flask(__name__, static_folder=os.path.abspath(frontend_folder), static_url_path='')
     app.config.from_object("app.config.Config")
 
