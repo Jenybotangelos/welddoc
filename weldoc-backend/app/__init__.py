@@ -9,14 +9,7 @@ PUBLIC_PATHS = {'/', '/login', '/auth/callback', '/logout', '/role.html', '/styl
 
 
 def create_app():
-    # Azure build copies frontend into weldoc-backend/weldoc/
-    # Locally it's at ../../weldoc relative to this file
-    azure_path = os.path.join(os.path.dirname(__file__), '..', 'weldoc')
-    local_path = os.path.join(os.path.dirname(__file__), '..', '..', 'weldoc')
-    if os.path.isdir(azure_path):
-        frontend_folder = azure_path
-    else:
-        frontend_folder = local_path
+    frontend_folder = os.path.join(os.path.dirname(__file__), '..', 'weldoc')
     app = Flask(__name__, static_folder=os.path.abspath(frontend_folder), static_url_path='')
     app.config.from_object("app.config.Config")
 
