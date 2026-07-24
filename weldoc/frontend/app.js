@@ -2074,29 +2074,20 @@ function onMatDrop(e,targetMatId){
     mats.filter(m=>m.position>=newPos&&m.position<oldPos).forEach(m=>m.position++);
   }
   dragged.position=newPos;
-  /* Handle start/end of plumbing */
+  /* Handle start of plumbing (end stays where it was manually set) */
   const sorted=mats.slice().sort((a,b)=>a.position-b.position);
   const idx=sorted.findIndex(m=>m.id===dragged.id);
-  /* Only reassign start/end if the dragged item was previously start/end,
-     or if it displaced an existing start/end item */
   const hadStart=sorted.some(m=>m.startOfPlumbing);
-  const hadEnd=sorted.some(m=>m.endOfPlumbing);
-  /* Clear start/end from dragged (it will be reassigned if needed) */
+  /* Clear start from dragged (it will be reassigned if needed) */
   dragged.startOfPlumbing=false;
-  dragged.endOfPlumbing=false;
+  /* Keep end as-is — do not clear or reassign */
   /* If dropped at first position AND there was already a start, take over start */
   if(idx===0 && hadStart){
     mats.forEach(m=>m.startOfPlumbing=false);
     dragged.startOfPlumbing=true;
   }
-  /* If dropped at last position AND there was already an end, take over end */
-  else if(idx===sorted.length-1 && hadEnd){
-    mats.forEach(m=>m.endOfPlumbing=false);
-    dragged.endOfPlumbing=true;
-  }
-  /* Ensure there's always a start (first item) and end (last item) if they existed before */
+  /* Ensure there's always a start (first item) if one existed before */
   if(hadStart && !sorted.some(m=>m.startOfPlumbing)){ sorted[0].startOfPlumbing=true; }
-  if(hadEnd && !sorted.some(m=>m.endOfPlumbing)){ sorted[sorted.length-1].endOfPlumbing=true; }
   /* Find new neighbors */
   const prev=idx>0?sorted[idx-1]:null;
   const next=idx<sorted.length-1?sorted[idx+1]:null;
