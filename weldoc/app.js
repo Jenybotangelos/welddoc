@@ -489,7 +489,7 @@ function renderChrome(activeNav, breadcrumbHtml){
       </a>
       <div class="topbar-divider"></div>
       <div class="breadcrumb">${breadcrumbHtml||''}</div>
-      <button class="topbar-reset" onclick="resetDemo()" title="Restore the original sample data">Reset demo data</button>
+
     </header>
     <nav class="sidebar">
       <div class="nav-section-label">Workspace</div>
@@ -1419,7 +1419,7 @@ function openArchiveModal(type,id){
   else if(type==='weld'){ label=getWeld(id).weldNo; noun='weld'; }
   else if(type==='material'){ const m=getMaterial(id); label=`${posLetter(m.position)} · ${m.piece}`; noun='material'; }
   document.getElementById('modal-archive-title').textContent=`Archive ${noun}?`;
-  document.getElementById('archive-confirm-text').textContent=`Archive "${label}"? It will be hidden from the lists. You can restore it by resetting the demo data.${warn}`;
+  document.getElementById('archive-confirm-text').textContent=`Archive "${label}"? It will be hidden from the lists.${warn}`;
   document.getElementById('archive-confirm-btn').textContent=`Archive ${noun}`;
   openModal('modal-archive'); document.getElementById('archive-cancel-btn').focus();
 }

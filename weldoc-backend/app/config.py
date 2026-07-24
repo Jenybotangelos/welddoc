@@ -10,3 +10,7 @@ class Config:
         + os.getenv("AZURE_SQL_CONNECTION_STRING", "")
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "change-me-in-production")
+    AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID", "")
+    AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID", "")
+    AZURE_CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET", "")

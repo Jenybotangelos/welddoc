@@ -6,7 +6,14 @@ import os
 
 
 def create_app():
-    frontend_folder = os.path.join(os.path.dirname(__file__), '..', 'weldoc')
+    # Azure build copies frontend into weldoc-backend/weldoc/
+    # Locally it's at ../../weldoc relative to this file
+    azure_path = os.path.join(os.path.dirname(__file__), '..', 'weldoc')
+    local_path = os.path.join(os.path.dirname(__file__), '..', '..', 'weldoc')
+    if os.path.isdir(azure_path):
+        frontend_folder = azure_path
+    else:
+        frontend_folder = local_path
     app = Flask(__name__, static_folder=os.path.abspath(frontend_folder), static_url_path='')
     app.config.from_object("app.config.Config")
 
@@ -17,7 +24,7 @@ def create_app():
 
     @app.route("/")
     def serve_index():
-        return send_from_directory(app.static_folder, 'index.html')
+        return send_from_directory(app.static_folder, 'role.html')
 
     @app.route("/<path:path>")
     def serve_frontend(path):

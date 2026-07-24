@@ -5,6 +5,7 @@ from app.routes.materials import materials_bp
 from app.routes.welds import welds_bp
 from app.routes.persons import users_bp
 from app.routes.builder_doc import builder_doc_bp
+from app.routes.auth import auth_bp
 
 
 def register_routes(app):
@@ -15,3 +16,4 @@ def register_routes(app):
     app.register_blueprint(welds_bp, url_prefix="/api/welds")
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(builder_doc_bp, url_prefix="/api/pipelines")
+    app.register_blueprint(auth_bp)
