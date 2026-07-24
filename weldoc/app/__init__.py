@@ -9,7 +9,7 @@ PUBLIC_PATHS = {'/', '/login', '/auth/callback', '/logout', '/role.html', '/styl
 
 
 def create_app():
-    frontend_folder = os.path.join(os.path.dirname(__file__), '..', 'weldoc')
+    frontend_folder = os.path.join(os.path.dirname(__file__), '..', 'frontend')
     app = Flask(__name__, static_folder=os.path.abspath(frontend_folder), static_url_path='')
     app.config.from_object("app.config.Config")
 

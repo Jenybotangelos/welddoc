@@ -1,17 +1,6 @@
 -- WeldDoc Database Schema for Azure SQL
 -- Run this script in Azure Portal > Query Editor or SSMS
 
--- ============================================================
--- USERS (staff & client login)
--- ============================================================
-CREATE TABLE weldoc_users (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(200) NOT NULL,
-    email NVARCHAR(200) NOT NULL UNIQUE,
-    password_hash NVARCHAR(500) NOT NULL,
-    role NVARCHAR(50) NOT NULL,  -- 'staff' or 'client'
-    archived BIT DEFAULT 0
-);
 
 -- ============================================================
 -- CLIENTS
@@ -110,31 +99,4 @@ CREATE TABLE weldoc_welds (
     CONSTRAINT FK_welds_pipeline FOREIGN KEY (pipeline_id) REFERENCES weldoc_pipelines(id)
 );
 
--- ============================================================
--- JUNCTION TABLES (many-to-many relationships)
--- ============================================================
 
--- Welders (name list)
-CREATE TABLE weldoc_welders (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(200) NOT NULL,
-    no NVARCHAR(50),
-    archived BIT DEFAULT 0
-);
-
--- Inspectors (name list)
-CREATE TABLE weldoc_inspectors (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(200) NOT NULL,
-    no NVARCHAR(50),
-    archived BIT DEFAULT 0
-);
-
--- Material <-> Material connections
-CREATE TABLE weldoc_material_connections (
-    material_id INT NOT NULL,
-    connected_id INT NOT NULL,
-    PRIMARY KEY (material_id, connected_id),
-    CONSTRAINT FK_mc_material FOREIGN KEY (material_id) REFERENCES weldoc_materials(id),
-    CONSTRAINT FK_mc_connected FOREIGN KEY (connected_id) REFERENCES weldoc_materials(id)
-);
