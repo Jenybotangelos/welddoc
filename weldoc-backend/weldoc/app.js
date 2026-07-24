@@ -768,7 +768,7 @@ function attachFormHandlers(){
   document.getElementById('project-form').addEventListener('submit',async e=>{
     e.preventDefault();
     const location=readSelectOther('input-project-location','input-project-location-new');
-    const data={ clientId:Number(val('input-project-client')), title:val('input-project-title'), location, order:Number(val('input-project-order'))||'', istProjectNo:val('input-project-istno'), description:val('input-project-description'), status:val('input-project-status') };
+    const data={ clientId:Number(val('input-project-client')), title:val('input-project-title'), location, order:val('input-project-order')||'', istProjectNo:val('input-project-istno'), description:val('input-project-description'), status:val('input-project-status') };
     if(editingProjectId!==null) data.id=editingProjectId;
     try {
       const apiData={...data, orderNo:data.order};
