@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeldDoc — Archive</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="chrome"></div>
+<main class="content">
+  <a class="back-link" href="index.html">&larr; Back</a>
+  <div class="page-header"><div><h1>Archive</h1><div class="page-subtitle">View and restore archived items.</div></div></div>
+  <div class="stat-grid" id="archive-stats"></div>
+  <div class="subtab-nav">
+    <button class="subtab active" id="arc-tab-clients" onclick="switchArchiveTab('clients')">Clients</button>
+    <button class="subtab" id="arc-tab-projects" onclick="switchArchiveTab('projects')">Projects</button>
+    <button class="subtab" id="arc-tab-pipelines" onclick="switchArchiveTab('pipelines')">Pipelines</button>
+    <button class="subtab" id="arc-tab-materials" onclick="switchArchiveTab('materials')">Materials</button>
+    <button class="subtab" id="arc-tab-welds" onclick="switchArchiveTab('welds')">Welds</button>
+  </div>
+  <div id="archive-tab-content"></div>
+  <div id="archive-expanded"></div>
+</main>
+<div id="modal-root"></div>
+<script src="app.js"></script><script>initArchivePage();</script>
+</body></html>

@@ -1,0 +1,14 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeldDoc — Welder profile</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="chrome"></div>
+<main class="content" id="profile-body">
+  <a class="back-link" href="welders.html">&larr; Back to welders</a>
+  <div class="profile-head"><div class="profile-avatar" id="profile-avatar"></div><div class="profile-meta"><h1 id="profile-name"></h1><div class="sub" id="profile-sub"></div></div>
+    <span style="flex:1"></span><button class="btn btn-ghost" id="profile-edit-btn">Edit welder</button></div>
+  <div class="stat-grid" id="profile-stats"></div>
+  <div class="section-label">Certificates</div>
+  <div class="table-card"><table><thead><tr><th>Certificate&nbsp;No.</th><th>Process</th><th>Standard</th><th>Valid until</th><th>Renewal due</th><th>PDF</th><th></th></tr></thead><tbody id="profile-certs-tbody"></tbody></table></div>
+</main>
+<div id="modal-root"></div>
+<script src="app.js"></script><script>initWelderProfilePage();</script>
+</body></html>

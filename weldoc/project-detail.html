@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeldDoc — Project detail</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="chrome"></div>
+<main class="content">
+  <div class="context-bar" id="project-context"></div>
+  <div class="page-header"><div>
+    <div class="title-switch"><span class="title-switch-label">Project</span><select id="project-switch" onchange="switchProject(this.value)"></select></div>
+    <div class="page-subtitle" id="project-subtitle"></div>
+  </div><button class="btn btn-primary" onclick="openProjectModal(PAGE.projectId)">Edit project</button></div>
+  <div class="info-panel"><div class="info-grid" id="project-info"></div></div>
+  <div class="stat-grid" id="project-stats"></div>
+  <div class="detail-toolbar" id="project-toolbar"></div>
+  <div id="project-pipelines"></div>
+</main>
+<div id="modal-root"></div>
+<script src="app.js"></script><script>initProjectDetailPage();</script>
+</body></html>

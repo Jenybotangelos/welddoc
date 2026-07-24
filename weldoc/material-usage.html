@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeldDoc — Material usage</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="chrome"></div>
+<main class="content">
+  <div class="context-bar" id="mu-context"></div>
+  <div class="page-header"><div><h1 id="mu-title">Material usage</h1><div class="page-subtitle" id="mu-subtitle"></div></div>
+    <button class="btn btn-ghost" id="mu-edit-btn" onclick="openMuEdit()">Edit material</button></div>
+  <div class="info-panel"><div class="info-grid" id="mu-info"></div></div>
+  <div class="stat-grid" id="mu-stats"></div>
+  <div class="section-label">Usage across pipelines</div>
+  <div class="table-card"><table class="table-wide"><thead><tr><th>Pipeline</th><th>Project</th><th>Client</th><th>Pos.</th><th>WAZ&nbsp;No.</th><th>Certificate</th><th>Heat / Melt&nbsp;No.</th><th></th></tr></thead><tbody id="mu-usage-tbody"></tbody></table></div>
+</main>
+<div id="modal-root"></div>
+<script src="app.js"></script><script>initMaterialUsagePage();</script>
+</body></html>

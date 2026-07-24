@@ -1,0 +1,16 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeldDoc — WAZ Documents</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="chrome"></div>
+<main class="content">
+  <div class="page-header"><div><h1>WAZ Documents</h1><div class="page-subtitle">Material acceptance (WAZ) documents across all clients and projects.</div></div></div>
+  <div class="stat-grid" id="waz-stats"></div>
+  <div class="filter-bar">
+    <select id="waz-filter-client" onchange="onWazFilterChange()"></select>
+    <select id="waz-filter-project" onchange="onWazFilterChange()"></select>
+    <button class="filter-clear" onclick="clearWazFilters()">Clear filters</button>
+  </div>
+  <div class="table-card"><table class="table-wide"><thead><tr><th>WAZ&nbsp;No.</th><th>Materials</th><th>Certificate</th><th>Heat&nbsp;No.</th><th>Project</th><th>PDF</th></tr></thead><tbody id="waz-tbody"></tbody></table></div>
+</main>
+<div id="modal-root"></div>
+<script src="app.js"></script><script>initWazPage();</script>
+</body></html>

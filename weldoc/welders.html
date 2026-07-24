@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeldDoc — Welders</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="chrome"></div>
+<main class="content">
+  <div class="page-header"><div><h1>Welders &amp; Certificates</h1><div class="page-subtitle">Certificate register — one row per certificate. Click a name for the full profile.</div></div>
+    <button class="btn btn-primary" onclick="openWelderModal()">+ New welder</button></div>
+  <div class="stat-grid" id="welders-stats"></div>
+  <div class="subtab-nav">
+    <button class="subtab active" id="wtab-active" onclick="switchWelderTab('active')">Active certificates</button>
+    <button class="subtab" id="wtab-archived" onclick="switchWelderTab('archived')">Archived certificates</button>
+  </div>
+  <div id="welders-active-section">
+    <div class="table-card"><table class="table-wide"><thead><tr id="welders-thead"></tr></thead><tbody id="welders-tbody"></tbody></table></div>
+  </div>
+  <div id="welders-archived-section" style="display:none;">
+    <div class="table-card"><table class="table-wide"><thead><tr id="welders-archived-thead"></tr></thead><tbody id="welders-archived-tbody"></tbody></table></div>
+  </div>
+</main>
+<div id="modal-root"></div>
+<script src="app.js"></script><script>initWeldersPage();</script>
+</body></html>
