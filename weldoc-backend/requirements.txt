@@ -7,3 +7,4 @@ python-dotenv==1.*
 marshmallow==3.*
 openpyxl==3.*
 Pillow==12.*
+gunicorn==23.*
