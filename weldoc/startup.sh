@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /home/site/wwwroot
+cd /home/site/wwwroot/weldoc
 
 # Install ODBC Driver 18 for SQL Server on Azure Linux
 if ! command -v sqlcmd &> /dev/null; then

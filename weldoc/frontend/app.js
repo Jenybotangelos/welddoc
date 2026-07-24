@@ -900,7 +900,8 @@ function attachFormHandlers(){
     if(hasDiameter(piece) && !diameter){ err.textContent='Outer diameter is required.'; err.classList.add('show'); return; }
     /* store up to 6 DNs as dimension, dimension2..dimension6 */
     const existingMat=editingMaterialId!==null?getMaterial(editingMaterialId):null;
-    const data={ pipelineId:PAGE.pipelineId, position:Number(val('input-mat-position'))||0,
+    const posVal=val('input-mat-position'); const posNum=Number(posVal)||(posVal&&posVal.charCodeAt(0)>=65&&posVal.charCodeAt(0)<=90?posVal.charCodeAt(0)-64:pipelineMaterials(PAGE.pipelineId).length+1);
+    const data={ pipelineId:PAGE.pipelineId, position:posNum,
       piece, dimension, materialCode:matCode, itemDescription:itemDesc||piece,
       diameter, thickness, dienNo, surface,
       certificate:existingMat?existingMat.certificate:'', heatNo:existingMat?existingMat.heatNo:'',
