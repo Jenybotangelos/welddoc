@@ -147,7 +147,7 @@ def generate_builder_doc(pipeline_id):
     ws["E6"]="DN"; ws["E6"].font=sf; ws["E6"].alignment=wc
     ws["F6"]="Dimension"; ws["F6"].font=sf; ws["F6"].alignment=wc
     ws["G6"]="Material"; ws["G6"].font=sf; ws["G6"].alignment=wc
-    ws["H6"]="Attest\nEN 10204"; ws["H6"].font=sf; ws["H6"].alignment=wc
+    ws["H6"]="Certificate\ntype"; ws["H6"].font=sf; ws["H6"].alignment=wc
     ws.merge_cells("I6:M6"); ws["I6"]="Oberfl\u00e4che\nSurface"; ws["I6"].font=sf; ws["I6"].alignment=wc
     ws.merge_cells("N6:O6"); ws["N6"]="Schmelzen/Probe Nr.\nHeat Number"; ws["N6"].font=sf; ws["N6"].alignment=wc
     ws["P6"]="WAZ Nummer\nAttest Number"; ws["P6"].font=sf; ws["P6"].alignment=wc

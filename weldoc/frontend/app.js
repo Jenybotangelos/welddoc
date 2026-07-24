@@ -600,7 +600,7 @@ function mountModals(){
         <div class="field-hint" id="conn-hint"></div>
       </div>
       <div class="modal-err" id="material-err"></div>
-      <div class="modal-note">Saving creates one weld per connection (dimension pre-filled from this material; other weld fields are completed later in the weld list).</div>
+      <div class="modal-note">You can also add or edit connections from the weld list.</div>
     </div><div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('modal-material')">Cancel</button><button type="submit" class="btn btn-primary">Save material</button></div></form>
   </div></div>
 
@@ -1140,6 +1140,7 @@ function onCategoryChange(){
   toggleWireFields(piece);
   toggleDnFields(piece);
   toggleDiameterThicknessFields(piece);
+  updateConnHint();
   const filtered=piece?matSource().filter(i=>i.piece===piece):matSource();
   const descs=[...new Set(filtered.map(i=>i.description))];
   buildSelectOther('input-mat-desc','input-mat-desc-new',descs,'');
@@ -1204,6 +1205,7 @@ function onItemDescChange(){
       toggleDiameterThicknessFields(hit.piece);
     }
   }
+  updateConnHint();
   cascadeFromDesc();
 }
 function cascadeFromDesc(){
@@ -1275,7 +1277,8 @@ function updateConnHint(){
   }
   const hint=document.getElementById('conn-hint');
   if(!otherExists) hint.textContent='This is the first material in the pipeline \u2014 no connections available yet.';
-  else hint.textContent=`Required connections for ${piece||'this piece'}: ${adjusted}`;
+  else if(!piece) hint.textContent='Select a category to see connection info.';
+  else hint.textContent=`Connections that ${piece} can have: ${adjusted}`;
 }
 function onStartEndChange(){
   const piece=readSelectOther('input-mat-piece','input-mat-piece-new');
@@ -1856,8 +1859,12 @@ async function initPipelineDetailPage(){
   PAGE.name='pipeline-detail'; initDB();
   PAGE.pipelineId=Number(qp('id'));
   try {
-    const [apiC, apiP, apiPl, apiM, apiW] = await Promise.all([apiGet('/clients'), apiGet('/projects'), apiGet('/pipelines'), apiGet('/materials?pipelineId='+PAGE.pipelineId), apiGet('/welds?pipelineId='+PAGE.pipelineId)]);
-    DB.clients=apiC; DB.projects=normalizeProjects(apiP); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
+    /* Fetch this pipeline first, then load only related data */
+    const pl0 = await apiGet('/pipelines/'+PAGE.pipelineId);
+    const projId = pl0.projectId;
+    const [apiPr, apiPl, apiM, apiW] = await Promise.all([apiGet('/projects/'+projId), apiGet('/pipelines?projectId='+projId), apiGet('/materials?pipelineId='+PAGE.pipelineId), apiGet('/welds?pipelineId='+PAGE.pipelineId)]);
+    const apiCl = await apiGet('/clients/'+apiPr.clientId);
+    DB.clients=[apiCl]; DB.projects=normalizeProjects([apiPr]); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
     rebuildRelationships();
   } catch(e){ console.error('API error:', e); }
   const tab=qp('tab'); if(tab==='weldlist'||tab==='materials') detailView=tab; else detailView='materials';
@@ -2125,6 +2132,16 @@ function onMatDrop(e,targetMatId){
   saveDB();
   _dragMatId=null;
   rerenderPage();
+  /* Sync reorder to backend */
+  try {
+    const allMats=pipelineMaterials(pipeId);
+    const payload={ pipelineId:pipeId, materials:allMats.map(m=>({
+      id:m.id, position:posLetter(m.position),
+      connections:(m.connections||[]).map(cid=>{ const c=getMaterial(cid); return c?posLetter(c.position):null; }).filter(Boolean),
+      startOfPlumbing:!!m.startOfPlumbing, endOfPlumbing:!!m.endOfPlumbing
+    }))};
+    apiPost('/materials/reorder', payload);
+  } catch(e){ console.error('Reorder API error:', e); }
 }
 /* Show welds for a material — if 1 weld, open edit directly; if multiple, open first seam detail */
 
@@ -2614,8 +2631,11 @@ async function initMaterialDetailPage(){
   try {
     const matData = await apiGet('/materials/'+PAGE.materialId);
     const pid = matData.pipelineId;
-    const [apiC, apiP, apiPl, apiM, apiW] = await Promise.all([apiGet('/clients'), apiGet('/projects'), apiGet('/pipelines'), apiGet('/materials?pipelineId='+pid), apiGet('/welds?pipelineId='+pid)]);
-    DB.clients=apiC; DB.projects=normalizeProjects(apiP); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
+    const pl0 = await apiGet('/pipelines/'+pid);
+    const projId = pl0.projectId;
+    const [apiPr, apiPl, apiM, apiW] = await Promise.all([apiGet('/projects/'+projId), apiGet('/pipelines?projectId='+projId), apiGet('/materials?pipelineId='+pid), apiGet('/welds?pipelineId='+pid)]);
+    const apiCl = await apiGet('/clients/'+apiPr.clientId);
+    DB.clients=[apiCl]; DB.projects=normalizeProjects([apiPr]); DB.pipelines=apiPl; DB.materials=normalizeMaterials(apiM); DB.welds=normalizeWelds(apiW);
     rebuildRelationships();
   } catch(e){ console.error('API error:', e); }
   PAGE.materialId=Number(qp('id')); const m=getMaterial(PAGE.materialId);

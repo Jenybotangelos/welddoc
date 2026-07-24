@@ -146,6 +146,80 @@ def _update(m, data):
         m.archived = data["archived"]
 
 
+@materials_bp.route("/reorder", methods=["POST"])
+def reorder_materials():
+    """Bulk update positions, connections, start/end flags after drag & drop.
+    Expects: { pipelineId, materials: [{id, position, connections:["B","D"], startOfPlumbing, endOfPlumbing}, ...] }
+    """
+    data = request.get_json()
+    pipeline_id = data["pipelineId"]
+    items = data["materials"]
+
+    # Build a position→material lookup for this pipeline
+    all_mats = {m.id: m for m in Material.query.filter_by(pipeline_id=pipeline_id, archived=False).all()}
+
+    # Update positions, start/end flags, and clear connections
+    for item in items:
+        m = all_mats.get(item["id"])
+        if not m:
+            continue
+        m.position = item["position"]
+        m.start_of_plumbing = item.get("startOfPlumbing", False)
+        m.end_of_plumbing = item.get("endOfPlumbing", False)
+        m.connections = []
+
+    db.session.commit()
+
+    # Delete all welds for this pipeline (they'll be recreated from connections)
+    Weld.query.filter_by(pipeline_id=pipeline_id, archived=False).delete()
+    db.session.commit()
+
+    # Rebuild connections and welds
+    pos_to_mat = {}
+    for m in all_mats.values():
+        pos_to_mat[m.position] = m
+
+    weld_no = 1
+    for item in items:
+        m = all_mats.get(item["id"])
+        if not m:
+            continue
+        for conn_pos in item.get("connections", []):
+            connected = pos_to_mat.get(conn_pos)
+            if not connected or connected.id == m.id:
+                continue
+            # Add bidirectional connection
+            if connected not in m.connections:
+                m.connections.append(connected)
+            if m not in connected.connections:
+                connected.connections.append(m)
+
+    db.session.commit()
+
+    # Create welds for each unique connection pair
+    seen_pairs = set()
+    for item in items:
+        m = all_mats.get(item["id"])
+        if not m:
+            continue
+        for conn_pos in item.get("connections", []):
+            pair = tuple(sorted([m.position, conn_pos]))
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            new_weld = Weld(
+                pipeline_id=pipeline_id,
+                weld_no=str(weld_no),
+                between_a=pair[0],
+                between_b=pair[1],
+            )
+            db.session.add(new_weld)
+            weld_no += 1
+
+    db.session.commit()
+    return jsonify({"ok": True}), 200
+
+
 def _serialize(m):
     return {
         "id": m.id,
