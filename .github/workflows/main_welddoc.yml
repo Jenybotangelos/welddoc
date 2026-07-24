@@ -39,6 +39,7 @@ jobs:
           name: python-app
           path: |
             weldoc-backend/
+            !weldoc-backend/venv/
             !antenv/
 
       # 🚫 Opting Out of Oryx Build
