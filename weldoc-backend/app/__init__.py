@@ -1,8 +1,11 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, session, redirect
 from flask_cors import CORS
 from app.database import db
 from app.routes import register_routes
 import os
+
+# Paths that don't require login
+PUBLIC_PATHS = {'/', '/login', '/auth/callback', '/logout', '/role.html', '/styles.css', '/app.js'}
 
 
 def create_app():
@@ -21,6 +24,24 @@ def create_app():
     db.init_app(app)
 
     register_routes(app)
+
+    @app.before_request
+    def require_login():
+        from flask import request
+        path = request.path
+        # Allow public paths, API routes, and static assets (css/js/images)
+        if path in PUBLIC_PATHS:
+            return
+        if path.startswith('/api/'):
+            return
+        if path.startswith('/auth/'):
+            return
+        # Allow static assets like fonts, images
+        if path.endswith(('.css', '.js', '.png', '.jpg', '.svg', '.ico', '.woff', '.woff2')):
+            return
+        # If not logged in, redirect to login page
+        if 'user' not in session:
+            return redirect('/')
 
     @app.route("/")
     def serve_index():
