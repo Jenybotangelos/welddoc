@@ -1,6 +1,10 @@
 from flask import Blueprint, redirect, request, session, jsonify, current_app
-import msal
 import uuid
+
+try:
+    import msal
+except ImportError:
+    msal = None
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -28,6 +32,8 @@ def _get_redirect_uri():
 
 @auth_bp.route("/login")
 def login():
+    if msal is None:
+        return "msal not installed on server. Run: pip install msal", 500
     session["state"] = str(uuid.uuid4())
     cca = _build_msal_app()
     auth_url = cca.get_authorization_request_url(
