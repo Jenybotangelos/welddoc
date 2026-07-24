@@ -64,5 +64,4 @@ jobs:
         with:
           app-name: 'welddoc'
           slot-name: 'Production'
-          package: weldoc-backend
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6D14B842A09B4ED1AAB5D29689DD2F09 }}
